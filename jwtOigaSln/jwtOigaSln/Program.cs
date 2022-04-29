@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
+using Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,29 +78,57 @@ app.MapPost("/login", (UserLoginModel user, IUnitOfWork unitOfWork) => Login(use
 
 app.MapGet("/get",
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Standard")]
-(int id, IUnitOfWork unitOfWork) => Get(id, unitOfWork));
+(string text, int pageNumber, IUnitOfWork unitOfWork) => Get(text, pageNumber, unitOfWork));
 
-IResult Get(int id, IUnitOfWork unitOfWork)
+IResult Get(string text,int pageNumber, IUnitOfWork unitOfWork)
 {
-    var user = unitOfWork.User.GetById(id);
-    
-    if (user == null) return Results.NotFound("Usuario no encontrado");
+    int pageSize = 10;
+    string accentText = new string(text.Normalize(NormalizationForm.FormD).Where(c => c < 128).ToArray());
 
-    return Results.Ok(user);
+    var punctuationText = new String(accentText.Where (ch => Char.IsLetterOrDigit(ch) || Char.IsWhiteSpace(ch)).ToArray());
+
+    var keyWords = punctuationText.Split(" ").ToList();
+
+    
+    var users = unitOfWork.User.GetAll().Where(u => keyWords.Any(x => u.FirstName.Contains(x, StringComparison.OrdinalIgnoreCase)) ||
+                                                       keyWords.Any(x => u.LastName.Contains(x, StringComparison.OrdinalIgnoreCase)) ||
+                                                       keyWords.Any(x => u.UserName.Contains(x, StringComparison.OrdinalIgnoreCase)))
+                                           .OrderBy(u => u.FirstName)
+                                           .ThenBy(x => x.LastName)
+                                           .ThenBy(x => x.UserName);
+
+    if (users == null || !users.Any()) return Results.NotFound("No Result Found");
+
+    double totalPages = ((double)users.Count() / (double)pageSize);
+    int roundedTotalPages = Convert.ToInt32(Math.Ceiling(totalPages));
+
+    if(pageNumber > roundedTotalPages)
+    {
+        pageNumber = 1;
+    }
+
+    var result = new ResultViewModel()
+    {
+        PageNumber = pageNumber,
+        TotalPages = roundedTotalPages,
+        Users = users.Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToList()
+    };
+
+    return Results.Ok(result);
 
 }
 
 app.MapGet("/List",
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Standard")]
-(int id, IUnitOfWork unitOfWork) => List(id, unitOfWork));
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
+(IUnitOfWork unitOfWork) => List(unitOfWork));
 
 IResult List(IUnitOfWork unitOfWork)
 {
-    var user = unitOfWork.User.GetAll();
+    var users = unitOfWork.User.GetAll();
 
-    if (user == null) return Results.NotFound("Usuario no encontrado");
-
-    return Results.Ok(user);
+    return Results.Ok(users);
 
 }
 

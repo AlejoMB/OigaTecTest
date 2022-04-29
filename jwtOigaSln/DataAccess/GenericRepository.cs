@@ -27,9 +27,9 @@ namespace DataAccess
         {
             return context.Set<T>().Where(expression);
         }
-        public IQueryable<T> GetAll()
+        public IEnumerable<T> GetAll()
         {
-            return context.Set<T>();
+            return context.Set<T>().ToList();
         }
         public T GetById(int id)
         {
