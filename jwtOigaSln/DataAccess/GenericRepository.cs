@@ -11,6 +11,10 @@ namespace DataAccess
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         public readonly OigaContext context;
+        /// <summary>
+        /// Adicioné todas las opciones de un CRUD como ejemplo
+        /// </summary>
+        /// <param name="context"></param>
         public GenericRepository(OigaContext context)
         {
             this.context = context;
