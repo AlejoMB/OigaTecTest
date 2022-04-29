@@ -5,10 +5,15 @@ Sitio creado en .Net Core 6
 Con las siguientes caracteristicas:
 
 Patron de Repositorio
+
 Patron Unit of Work
+
 JWT para autenticación
+
 EF code first
+
 Swagger
+
 Minimal Web Appi
 
 
