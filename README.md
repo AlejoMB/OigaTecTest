@@ -26,3 +26,5 @@ Password: MyPass_w0rd
 
 2. "get"
 Este contiene toda la lógica del ejercicio
+
+Se agregaron datos de prueba al proyecto para agilizar su proceso de prueba, si se quiere probar el paginado solo la palabra clave "alejo" arroja 12 registros
